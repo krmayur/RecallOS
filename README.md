@@ -436,11 +436,3 @@ By transforming fragmented digital activity into a searchable timeline, RecallOS
 > **"What was I doing, and how did I get here?"**
 
 ---
-
-## 📜 License
-
-MIT License
-
----
-
-**Built to help people remember their work—not just record it.**
