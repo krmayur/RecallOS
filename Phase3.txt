@@ -1,0 +1,940 @@
+# RecallOS
+
+# Phase 3 — Monorepo Folder Structure
+
+**Status:** ✅ Phase 3 only
+
+No application code yet.
+
+This phase defines a scalable repository that can support years of development while keeping clear ownership boundaries, shared contracts, and efficient builds.
+
+---
+
+# Why a Monorepo?
+
+RecallOS consists of multiple applications that share models, APIs, UI components, and utilities:
+
+* Electron desktop application
+* React frontend
+* Express backend
+* Browser extensions
+* IDE integrations
+* Shared TypeScript types
+* AI provider SDKs
+* Database schemas
+* Configuration
+* Documentation
+
+A monorepo avoids duplicated code and keeps all packages versioned together.
+
+---
+
+# Recommended Stack
+
+| Tool                          | Purpose                                   |
+| ----------------------------- | ----------------------------------------- |
+| pnpm                          | Package manager                           |
+| TurboRepo                     | Incremental builds and task orchestration |
+| TypeScript Project References | Fast compilation                          |
+| ESLint                        | Linting                                   |
+| Prettier                      | Formatting                                |
+| Husky                         | Git hooks                                 |
+| lint-staged                   | Pre-commit checks                         |
+| Vitest                        | Unit testing                              |
+| Playwright                    | E2E testing                               |
+| Electron Builder              | Desktop packaging                         |
+| Docker                        | Backend services (optional)               |
+
+---
+
+# Repository Layout
+
+```text
+recallos/
+
+├── apps/
+│
+├── packages/
+│
+├── tooling/
+│
+├── docs/
+│
+├── scripts/
+│
+├── assets/
+│
+├── tests/
+│
+├── docker/
+│
+├── .github/
+│
+├── turbo.json
+├── pnpm-workspace.yaml
+├── package.json
+├── tsconfig.base.json
+├── README.md
+└── LICENSE
+```
+
+---
+
+# apps/
+
+Applications that users run.
+
+```text
+apps/
+
+desktop/
+backend/
+frontend/
+browser-extension/
+vscode-extension/
+cursor-extension/
+windsurf-extension/
+intellij-plugin/
+```
+
+Each application builds independently.
+
+---
+
+# Desktop Application
+
+```text
+apps/desktop/
+
+src/
+
+main/
+
+ipc/
+
+tray/
+
+updater/
+
+notifications/
+
+windows/
+
+services/
+
+renderer/
+
+hooks/
+
+pages/
+
+components/
+
+state/
+
+preload/
+
+assets/
+
+tests/
+```
+
+Responsibilities:
+
+* Electron lifecycle
+* Native OS integration
+* Tray
+* Auto-update
+* IPC bridge
+
+---
+
+# Backend
+
+```text
+apps/backend/
+
+src/
+
+controllers/
+
+routes/
+
+middleware/
+
+services/
+
+repositories/
+
+workers/
+
+queues/
+
+events/
+
+providers/
+
+database/
+
+config/
+
+validation/
+
+utils/
+
+startup/
+
+tests/
+```
+
+Responsibilities:
+
+* REST API
+* Event processing
+* Timeline
+* AI
+* Analytics
+* Search
+
+---
+
+# Frontend
+
+```text
+apps/frontend/
+
+src/
+
+pages/
+
+layouts/
+
+components/
+
+features/
+
+hooks/
+
+services/
+
+stores/
+
+router/
+
+styles/
+
+assets/
+
+tests/
+```
+
+Responsibilities:
+
+* UI only
+* React Query
+* Routing
+* Charts
+* Timeline
+* Search
+
+---
+
+# Browser Extension
+
+```text
+apps/browser-extension/
+
+src/
+
+background/
+
+content/
+
+popup/
+
+options/
+
+native/
+
+shared/
+
+tests/
+```
+
+Shared code builds Chrome, Edge, Brave, and Firefox variants.
+
+---
+
+# VS Code Extension
+
+```text
+apps/vscode-extension/
+
+src/
+
+commands/
+
+watchers/
+
+terminal/
+
+git/
+
+events/
+
+providers/
+
+tests/
+```
+
+---
+
+# Cursor Extension
+
+```text
+apps/cursor-extension/
+
+src/
+```
+
+Mostly reuses VS Code package with minimal overrides.
+
+---
+
+# IntelliJ Plugin
+
+```text
+apps/intellij-plugin/
+
+src/
+
+kotlin/
+
+resources/
+
+plugin.xml
+
+tests/
+```
+
+Implemented separately due to JetBrains platform requirements.
+
+---
+
+# packages/
+
+Shared libraries.
+
+```text
+packages/
+
+core/
+
+events/
+
+database/
+
+ai/
+
+embeddings/
+
+timeline/
+
+graph/
+
+search/
+
+analytics/
+
+ocr/
+
+replay/
+
+capture/
+
+config/
+
+logger/
+
+security/
+
+storage/
+
+queue/
+
+shared/
+
+types/
+
+ui/
+
+hooks/
+
+api-client/
+
+utils/
+```
+
+These packages contain reusable business logic.
+
+---
+
+# Package Responsibilities
+
+## core
+
+Application bootstrap.
+
+Shared dependency injection.
+
+Lifecycle management.
+
+---
+
+## events
+
+```text
+Event
+
+EventBus
+
+EventPublisher
+
+EventSubscriber
+
+EventRegistry
+```
+
+No business logic.
+
+---
+
+## database
+
+```text
+SQLite
+
+Migrations
+
+Repositories
+
+Connection Pool
+
+Transactions
+```
+
+---
+
+## ai
+
+```text
+LLM Providers
+
+Prompt Builder
+
+Context Builder
+
+Memory Retrieval
+
+Streaming
+
+Token Estimation
+```
+
+---
+
+## embeddings
+
+Responsible for
+
+* vector generation
+* batching
+* caching
+* model abstraction
+
+---
+
+## search
+
+Contains
+
+* keyword search
+* semantic search
+* hybrid ranking
+* query parser
+* filters
+
+---
+
+## graph
+
+Knowledge graph engine.
+
+Node generation.
+
+Relationship detection.
+
+Traversal.
+
+Visualization adapters.
+
+---
+
+## replay
+
+Builds semantic session replay.
+
+---
+
+## timeline
+
+Groups events.
+
+Creates work sessions.
+
+Detects context switches.
+
+---
+
+## analytics
+
+Calculates
+
+* coding time
+* focus score
+* productivity
+* interruptions
+
+---
+
+## OCR
+
+Supports multiple engines.
+
+Example:
+
+```text
+OCRProvider
+
+↓
+
+Tesseract
+
+↓
+
+Windows OCR
+
+↓
+
+Apple Vision
+
+↓
+
+Cloud OCR
+```
+
+---
+
+## logger
+
+Shared logging.
+
+```text
+Logger
+
+AuditLogger
+
+PerformanceLogger
+```
+
+---
+
+## security
+
+Contains
+
+Encryption
+
+Permission manager
+
+Secrets manager
+
+Hashing
+
+---
+
+## config
+
+Configuration loader.
+
+Validation.
+
+Environment management.
+
+---
+
+## queue
+
+Shared worker queue.
+
+Retry strategy.
+
+Dead-letter queue.
+
+---
+
+## storage
+
+Handles
+
+Files
+
+Screenshots
+
+Cache
+
+Compression
+
+Cleanup
+
+---
+
+## shared
+
+Pure utilities.
+
+No dependencies.
+
+---
+
+## types
+
+Contains
+
+Shared DTOs.
+
+Enums.
+
+Interfaces.
+
+Validation schemas.
+
+---
+
+## ui
+
+Reusable React components.
+
+Examples:
+
+```text
+Timeline
+
+Search Box
+
+Cards
+
+Dialogs
+
+Graphs
+
+Charts
+
+Markdown
+
+Settings
+```
+
+---
+
+## api-client
+
+Shared HTTP client.
+
+Generated API types.
+
+---
+
+# tooling/
+
+Internal developer tooling.
+
+```text
+tooling/
+
+eslint/
+
+prettier/
+
+tsconfig/
+
+vitest/
+
+playwright/
+
+electron-builder/
+
+release/
+```
+
+---
+
+# docs/
+
+```text
+docs/
+
+architecture/
+
+api/
+
+database/
+
+deployment/
+
+security/
+
+plugins/
+
+roadmap/
+
+development/
+```
+
+Every major subsystem has dedicated documentation.
+
+---
+
+# scripts/
+
+Automation.
+
+```text
+scripts/
+
+build/
+
+release/
+
+generate/
+
+database/
+
+seed/
+
+cleanup/
+
+benchmark/
+```
+
+---
+
+# tests/
+
+Global integration tests.
+
+```text
+tests/
+
+integration/
+
+performance/
+
+e2e/
+
+fixtures/
+
+mocks/
+```
+
+Application-specific tests stay inside each app.
+
+---
+
+# assets/
+
+```text
+assets/
+
+icons/
+
+logos/
+
+illustrations/
+
+fonts/
+
+animations/
+```
+
+---
+
+# docker/
+
+```text
+docker/
+
+backend/
+
+chromadb/
+
+development/
+```
+
+Optional containers for development.
+
+---
+
+# .github/
+
+```text
+.github/
+
+workflows/
+
+ISSUE_TEMPLATE/
+
+PULL_REQUEST_TEMPLATE/
+
+CODEOWNERS/
+```
+
+---
+
+# Dependency Rules
+
+To prevent architectural drift, dependencies are one-way:
+
+```text
+Frontend
+    │
+    ▼
+API Client
+    │
+    ▼
+Backend
+    │
+    ▼
+Core Services
+    │
+    ▼
+Repositories
+    │
+    ▼
+Database
+```
+
+Rules:
+
+* UI packages must not import database code.
+* Backend must not import frontend packages.
+* Shared packages must not depend on application packages.
+* Domain logic must not depend on Electron.
+
+---
+
+# Build Pipeline
+
+```text
+Shared Types
+      │
+      ▼
+Shared Packages
+      │
+      ▼
+Backend
+Desktop
+Extensions
+Frontend
+      │
+      ▼
+Tests
+      │
+      ▼
+Release
+```
+
+TurboRepo caches unchanged builds.
+
+---
+
+# Environment Strategy
+
+Separate configuration for:
+
+```text
+development
+testing
+staging
+production
+```
+
+User-specific settings remain outside the repository.
+
+---
+
+# Code Standards
+
+* TypeScript `strict` mode enabled.
+* ESLint with zero warnings policy.
+* Prettier enforced on commit.
+* Conventional Commits for versioning.
+* Dependency injection over global state.
+* No circular dependencies.
+* Comprehensive JSDoc for public APIs.
+* Structured logging throughout.
+
+---
+
+# CI/CD Pipeline
+
+Every pull request runs:
+
+1. Install dependencies
+2. Type checking
+3. Linting
+4. Unit tests
+5. Integration tests
+6. Build all packages
+7. Electron packaging smoke test
+8. Browser extension validation
+9. Playwright end-to-end tests
+10. Security audit
+11. License compliance check
+
+Only fully passing builds can be merged.
+
+---
+
+# Release Strategy
+
+Independent release channels:
+
+* Desktop Stable
+* Desktop Beta
+* Backend
+* Browser Extension
+* VS Code Extension
+* Cursor Extension
+* IntelliJ Plugin
+
+Semantic versioning is used across the monorepo, with coordinated releases managed by TurboRepo and pnpm workspaces.
+
+---
+
+## Phase 3 Deliverables
+
+* ✅ Complete monorepo layout
+* ✅ Application boundaries
+* ✅ Shared package organization
+* ✅ Dependency rules
+* ✅ Build pipeline
+* ✅ Tooling strategy
+* ✅ Testing structure
+* ✅ CI/CD workflow
+* ✅ Release strategy
+* ✅ Coding standards
+
+---
+
+**Phase 3 is complete.**

@@ -1,0 +1,905 @@
+# RecallOS
+
+# Phase 4 — Database Design
+
+**Status:** ✅ Phase 4 only
+
+No backend implementation yet.
+
+This phase defines the persistent data model that powers RecallOS.
+
+---
+
+# Database Philosophy
+
+RecallOS stores **knowledge**, not raw logs.
+
+Every activity progresses through this lifecycle:
+
+```text
+Raw Event
+    │
+    ▼
+Normalized Event
+    │
+    ▼
+AI Summary
+    │
+    ▼
+Embedding
+    │
+    ▼
+Timeline Session
+    │
+    ▼
+Knowledge Graph
+```
+
+SQLite stores structured data.
+
+ChromaDB stores semantic vectors.
+
+Large files (screenshots, thumbnails, OCR caches) remain on disk.
+
+---
+
+# Storage Layout
+
+```text
+RecallOS Data/
+
+database/
+
+    recall.db
+
+vectors/
+
+    chromadb/
+
+screenshots/
+
+    2026/
+
+ocr/
+
+exports/
+
+cache/
+
+logs/
+```
+
+This keeps the SQLite database compact and backup-friendly.
+
+---
+
+# Entity Relationship Diagram (Simplified)
+
+```text
+User
+ │
+ ├─────────────┐
+ │             │
+ ▼             ▼
+Project     Settings
+
+ │
+ ▼
+Workspace
+
+ │
+ ▼
+Repository
+
+ │
+ ▼
+File
+
+ │
+ ▼
+Event
+
+ │
+ ├──────────────┐
+ ▼              ▼
+Summary     Screenshot
+
+ │              │
+ ▼              ▼
+Embedding     OCR
+
+ │
+ ▼
+Timeline Session
+
+ │
+ ▼
+Journal
+
+ │
+ ▼
+Knowledge Graph
+```
+
+---
+
+# Core Tables
+
+---
+
+## users
+
+Normally one row.
+
+```sql
+users
+
+id
+name
+email
+created_at
+updated_at
+```
+
+Designed for future multi-profile support.
+
+---
+
+## settings
+
+Stores user preferences.
+
+```text
+theme
+
+ai_provider
+
+embedding_model
+
+capture_enabled
+
+private_mode
+
+retention_days
+
+encryption_enabled
+
+ignored_apps
+
+ignored_websites
+```
+
+---
+
+## workspaces
+
+Represents logical work.
+
+Examples
+
+```text
+Personal
+
+TCS
+
+Open Source
+
+Freelance
+```
+
+Projects belong here.
+
+---
+
+## projects
+
+```text
+id
+
+workspace_id
+
+name
+
+description
+
+language
+
+status
+
+created_at
+
+updated_at
+```
+
+---
+
+## repositories
+
+```text
+id
+
+project_id
+
+path
+
+git_remote
+
+default_branch
+
+last_commit
+
+created_at
+```
+
+---
+
+## files
+
+```text
+id
+
+repository_id
+
+path
+
+extension
+
+language
+
+checksum
+
+size
+
+last_modified
+```
+
+The checksum helps detect unchanged files.
+
+---
+
+## events
+
+This is the heart of RecallOS.
+
+```text
+id
+
+timestamp
+
+source
+
+type
+
+project_id
+
+repository_id
+
+file_id
+
+title
+
+summary
+
+metadata_json
+
+confidence
+
+privacy
+
+created_at
+```
+
+Example sources:
+
+```text
+Browser
+
+VS Code
+
+Cursor
+
+Terminal
+
+Git
+
+Clipboard
+
+Screenshot
+
+OCR
+
+Meeting
+
+PDF
+```
+
+---
+
+## event_links
+
+Many events are related.
+
+Example:
+
+```text
+Read Docker Docs
+
+↓
+
+Terminal Error
+
+↓
+
+Git Commit
+```
+
+Schema:
+
+```text
+parent_event
+
+child_event
+
+relationship
+
+confidence
+```
+
+Relationships:
+
+* CAUSED_BY
+* REFERENCES
+* CONTINUES
+* DUPLICATES
+* GENERATED
+* FIXES
+
+---
+
+## screenshots
+
+```text
+id
+
+event_id
+
+path
+
+width
+
+height
+
+hash
+
+captured_at
+```
+
+Images remain on disk.
+
+SQLite stores metadata.
+
+---
+
+## ocr_results
+
+```text
+id
+
+screenshot_id
+
+text
+
+language
+
+confidence
+```
+
+Searching screenshots becomes simple.
+
+---
+
+## summaries
+
+```text
+id
+
+event_id
+
+provider
+
+model
+
+summary
+
+tokens
+
+processing_time
+```
+
+This allows regenerating summaries with better models later.
+
+---
+
+## embeddings
+
+SQLite stores metadata only.
+
+```text
+id
+
+event_id
+
+collection
+
+vector_id
+
+model
+
+created_at
+```
+
+Actual vectors live in ChromaDB.
+
+---
+
+# ChromaDB Collections
+
+Instead of one huge collection:
+
+```text
+events
+
+screenshots
+
+files
+
+clipboard
+
+browser
+
+terminal
+
+journals
+
+knowledge
+```
+
+This improves retrieval speed and filtering.
+
+---
+
+## timeline_sessions
+
+Instead of individual events:
+
+```text
+Morning Coding
+
+↓
+
+Authentication Work
+
+↓
+
+Docker Debugging
+
+↓
+
+Commit Login
+```
+
+Schema:
+
+```text
+id
+
+title
+
+start_time
+
+end_time
+
+duration
+
+summary
+
+productivity_score
+```
+
+Each session references multiple events.
+
+---
+
+## session_events
+
+Many-to-many relationship.
+
+```text
+session_id
+
+event_id
+```
+
+---
+
+## journals
+
+Generated daily.
+
+```text
+date
+
+morning
+
+afternoon
+
+evening
+
+completed
+
+blocked
+
+learned
+
+tomorrow
+```
+
+---
+
+## weekly_reports
+
+```text
+week
+
+coding_hours
+
+meeting_hours
+
+reading_hours
+
+top_projects
+
+skills
+
+summary
+```
+
+---
+
+## analytics
+
+Daily metrics.
+
+```text
+date
+
+coding_minutes
+
+terminal_minutes
+
+browser_minutes
+
+focus_score
+
+interruptions
+
+context_switches
+
+productivity_score
+```
+
+Precomputed to avoid expensive calculations.
+
+---
+
+## bookmarks
+
+User-created memories.
+
+```text
+Important Docker Fix
+
+JWT Tutorial
+
+Deployment Guide
+```
+
+Schema:
+
+```text
+id
+
+title
+
+event_id
+
+note
+
+created_at
+```
+
+---
+
+## tags
+
+```text
+Docker
+
+React
+
+JWT
+
+Redis
+
+Authentication
+```
+
+---
+
+## event_tags
+
+Many-to-many.
+
+Allows fast filtering.
+
+---
+
+## graph_nodes
+
+Represents knowledge entities.
+
+```text
+Docker
+
+JWT
+
+Redis
+
+Spring
+
+Inventory System
+```
+
+---
+
+## graph_edges
+
+Represents relationships.
+
+```text
+JWT
+
+USES
+
+Spring Security
+```
+
+```text
+Docker
+
+FIXED_BY
+
+Port Kill Command
+```
+
+---
+
+## ai_conversations
+
+Every AI interaction is searchable.
+
+```text
+question
+
+answer
+
+provider
+
+model
+
+related_events
+```
+
+---
+
+## search_history
+
+Improves suggestions.
+
+Stores:
+
+```text
+query
+
+timestamp
+
+result_count
+```
+
+---
+
+# Index Strategy
+
+Critical indexes:
+
+### Events
+
+```sql
+timestamp
+
+source
+
+project_id
+
+repository_id
+
+type
+```
+
+---
+
+### Files
+
+```sql
+path
+
+checksum
+```
+
+---
+
+### Screenshots
+
+```sql
+hash
+
+captured_at
+```
+
+---
+
+### Timeline
+
+```sql
+start_time
+
+end_time
+```
+
+---
+
+### Tags
+
+```sql
+tag_name
+```
+
+---
+
+# Full-Text Search (FTS5)
+
+SQLite's FTS5 virtual tables will index:
+
+* Event titles
+* Event summaries
+* OCR text
+* Journal content
+* AI conversations
+
+This enables instant keyword search before semantic search is used.
+
+---
+
+# Hybrid Search Flow
+
+```text
+User Query
+    │
+    ├──► SQLite FTS5
+    │
+    └──► ChromaDB
+             │
+             ▼
+      Reciprocal Rank Fusion
+             │
+             ▼
+      Ranked Results
+```
+
+Using both approaches provides high precision and good semantic recall.
+
+---
+
+# Data Retention
+
+User-configurable policies:
+
+* Keep forever (default)
+* 30 days
+* 90 days
+* 1 year
+* Custom
+
+Cleanup runs in a background maintenance task.
+
+---
+
+# Backup Strategy
+
+Automatic local backups:
+
+```text
+recall.db
+
+↓
+
+Daily Snapshot
+
+↓
+
+Compressed Archive
+
+↓
+
+Retention Rotation
+```
+
+Exports:
+
+* JSON
+* Markdown
+* SQLite
+* ZIP bundle (database + screenshots + vectors metadata)
+
+---
+
+# Database Migration Strategy
+
+Use a versioned migration system:
+
+```text
+001_initial_schema.sql
+
+002_graph_tables.sql
+
+003_ai_tables.sql
+
+004_indexes.sql
+
+005_analytics.sql
+```
+
+Each migration is:
+
+* Atomic
+* Idempotent
+* Rollback-aware where practical
+
+---
+
+# Why this design works for a solo developer
+
+This schema intentionally avoids unnecessary complexity:
+
+* ~20 well-defined tables instead of 60+.
+* JSON columns (`metadata_json`) for source-specific data instead of dozens of sparse columns.
+* ChromaDB only stores vectors; SQLite remains the authoritative relational store.
+* FTS5 provides excellent local keyword search without requiring an external search engine like Elasticsearch.
+* The model is extensible but remains understandable by a single engineer.
+
+---
+
+## Phase 4 Deliverables
+
+* ✅ Normalized SQLite schema
+* ✅ ChromaDB collection design
+* ✅ Entity relationships
+* ✅ Timeline storage model
+* ✅ Knowledge graph schema
+* ✅ Hybrid search strategy
+* ✅ Indexing plan
+* ✅ Backup and retention model
+* ✅ Migration strategy
+* ✅ Solo-developer simplifications
+
+**Phase 4 is complete.**

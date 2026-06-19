@@ -1,0 +1,685 @@
+This is an excellent scope for a serious software engineering project. It is also **far too large to generate in a single conversation**. You're effectively describing a commercial product consisting of well over **150,000–300,000 lines of code** spanning Electron, React, Node, browser extensions, IDE plugins, AI integrations, OCR, indexing, analytics, databases, and documentation.
+
+Trying to generate it all at once would result in inconsistent architecture and code that doesn't fit together. Your phased approach is exactly how this should be built.
+
+I'll follow your workflow exactly.
+
+---
+
+# RecallOS
+
+## Phase 1 — Project Planning
+
+**Status:** ✅ Starting Phase 1 only.
+
+No code yet.
+
+This phase defines the product so every future phase fits together.
+
+---
+
+# Product Vision
+
+RecallOS is not a recorder.
+
+It is an **AI Memory Operating System**.
+
+Instead of storing raw activities, it stores **understanding**.
+
+Every interaction becomes structured knowledge that can later be reconstructed into human memory.
+
+```
+Activity
+
+↓
+
+Context
+
+↓
+
+Meaning
+
+↓
+
+Embeddings
+
+↓
+
+Timeline
+
+↓
+
+Knowledge Graph
+
+↓
+
+Memory
+```
+
+---
+
+# Design Principles
+
+## 1. Local First
+
+Everything works offline.
+
+AI models may run locally.
+
+Cloud AI is optional.
+
+---
+
+## 2. Event Driven
+
+Nothing communicates directly.
+
+Everything emits events.
+
+```
+VS Code
+
+↓
+
+Event Bus
+
+↓
+
+Timeline
+
+↓
+
+Search
+
+↓
+
+Analytics
+
+↓
+
+Knowledge Graph
+
+↓
+
+Journal
+```
+
+Every new feature simply subscribes to events.
+
+---
+
+## 3. AI Optional
+
+If no AI provider exists
+
+RecallOS still works.
+
+When AI becomes available
+
+It upgrades automatically.
+
+---
+
+## 4. Memory instead of Recording
+
+Never save useless information.
+
+Instead store
+
+```
+Problem
+
+↓
+
+Action
+
+↓
+
+Result
+
+↓
+
+Knowledge
+```
+
+Example
+
+Instead of
+
+```
+Opened Chrome
+
+Opened VS Code
+
+Opened Terminal
+```
+
+Store
+
+```
+Implemented JWT Authentication
+
+Read Spring Docs
+
+Fixed Docker Port Conflict
+
+Committed Login Feature
+```
+
+---
+
+# Product Modules
+
+```
+RecallOS
+
+├── Desktop Agent
+├── Backend
+├── Frontend
+├── Browser Extension
+├── IDE Connectors
+├── AI Engine
+├── OCR Engine
+├── Timeline Engine
+├── Knowledge Graph
+├── Analytics Engine
+├── Search Engine
+├── Replay Engine
+├── Sync Engine
+└── Settings
+```
+
+Each module can be developed independently.
+
+---
+
+# High-Level Architecture
+
+```
++----------------------------+
+| Electron Desktop Agent     |
++------------+---------------+
+             |
+             v
++----------------------------+
+| Event Bus                  |
++------------+---------------+
+             |
+             v
++----------------------------+
+| Event Processor            |
++------------+---------------+
+             |
+      +------+------+
+      |             |
+      v             v
+
+SQLite        ChromaDB
+
+      |             |
+      +------+------+
+             |
+             v
+
+Timeline Engine
+
+             |
+      +------+------+
+      |             |
+      v             v
+
+Knowledge Graph
+Search Engine
+
+             |
+             v
+
+AI Engine
+
+             |
+             v
+
+React UI
+```
+
+---
+
+# Primary Components
+
+## Desktop Agent
+
+Captures
+
+* Active window
+* Clipboard
+* Keyboard activity
+* Mouse activity
+* Screenshots
+* Files
+* Git
+* Terminal
+* Browser extension messages
+
+Only emits normalized events.
+
+No business logic.
+
+---
+
+## Backend
+
+Responsible for
+
+* APIs
+* Event processing
+* AI
+* Search
+* Timeline
+* Graph
+* Reports
+* Replay
+
+---
+
+## Frontend
+
+Pure UI.
+
+Consumes APIs only.
+
+Never talks directly to SQLite.
+
+---
+
+## AI Engine
+
+Contains providers
+
+```
+OpenAI
+
+Claude
+
+Gemini
+
+Ollama
+
+OpenRouter
+```
+
+Every provider implements
+
+```
+LLMProvider
+```
+
+making them interchangeable.
+
+---
+
+## Embedding Engine
+
+Supports
+
+```
+OpenAI
+
+Nomic
+
+BGE
+
+Ollama
+
+Instructor
+
+Sentence Transformers
+```
+
+Embeddings stored separately.
+
+---
+
+# Core Event
+
+Everything becomes one structure.
+
+```
+Event
+
+id
+
+timestamp
+
+source
+
+project
+
+repository
+
+type
+
+summary
+
+metadata
+
+embedding
+
+relations
+
+confidence
+
+visibility
+
+privacy
+```
+
+No exceptions.
+
+---
+
+# Timeline Philosophy
+
+Instead of chronological logs
+
+RecallOS groups related events.
+
+Example
+
+```
+9:02
+
+Chrome
+
+↓
+
+Spring Docs
+
+↓
+
+VS Code
+
+↓
+
+Terminal
+
+↓
+
+Git Commit
+```
+
+becomes
+
+```
+Implemented JWT Authentication
+
+Duration
+
+48 min
+
+Resources
+
+Spring Docs
+
+StackOverflow
+
+Files
+
+Terminal
+
+Git Commit
+```
+
+---
+
+# Knowledge Graph
+
+Everything becomes connected.
+
+```
+Docker
+
+↓
+
+Compose
+
+↓
+
+Port 5432
+
+↓
+
+Postgres
+
+↓
+
+Inventory Project
+
+↓
+
+Commit
+
+↓
+
+Screenshot
+
+↓
+
+Terminal Error
+
+↓
+
+Solution
+```
+
+Later searching
+
+```
+docker postgres error
+```
+
+retrieves everything.
+
+---
+
+# AI Memory Pipeline
+
+```
+Capture
+
+↓
+
+Normalize
+
+↓
+
+Deduplicate
+
+↓
+
+Context Merge
+
+↓
+
+Summarize
+
+↓
+
+Generate Embeddings
+
+↓
+
+Store
+
+↓
+
+Timeline Builder
+
+↓
+
+Knowledge Graph
+
+↓
+
+Analytics
+```
+
+---
+
+# Search Pipeline
+
+User
+
+```
+Where did I learn JWT?
+```
+
+↓
+
+Intent Detection
+
+↓
+
+Hybrid Search
+
+↓
+
+SQLite
+
+*
+
+Vector Search
+
+↓
+
+Knowledge Graph Expansion
+
+↓
+
+Timeline Ranking
+
+↓
+
+LLM Answer
+
+---
+
+# Replay Engine
+
+Replay is semantic.
+
+Example
+
+```
+Building Authentication
+
+↓
+
+Reading Docs
+
+↓
+
+Creating AuthService
+
+↓
+
+Running Tests
+
+↓
+
+Failure
+
+↓
+
+Docker Investigation
+
+↓
+
+Solution
+
+↓
+
+Commit
+```
+
+Not video.
+
+Not screenshots.
+
+Actual workflow reconstruction.
+
+---
+
+# Privacy Model
+
+Everything defaults to private.
+
+Features include:
+
+* Local-only storage
+* AES-256 encryption at rest for sensitive content
+* Encrypted secrets storage for API keys
+* Pause recording
+* Per-app exclusion
+* Per-website exclusion
+* Private mode
+* Automatic retention policies
+* Full export
+* Complete deletion
+* Granular permissions for every capture source
+
+---
+
+# Performance Goals
+
+Desktop Agent
+
+* Idle CPU < 3%
+* Active CPU < 10%
+* RAM < 250 MB
+
+Backend
+
+* Search < 150 ms
+* Timeline generation < 300 ms
+* Embedding queue asynchronous
+* Incremental indexing
+* Batch event processing
+
+---
+
+# Monorepo Strategy
+
+A monorepo is the right choice because the desktop agent, backend, frontend, shared types, UI library, browser extension, and IDE integrations all need consistent contracts and shared packages. This minimizes duplicated models, keeps APIs synchronized, and simplifies coordinated releases.
+
+---
+
+# Development Milestones
+
+1. **Foundation** — Monorepo, tooling, shared packages, CI, linting, formatting.
+2. **Core Platform** — Event bus, backend APIs, SQLite schema, ChromaDB integration.
+3. **Capture Layer** — Desktop agent, browser extension, terminal and Git monitoring, IDE connectors.
+4. **Intelligence Layer** — AI providers, summarization, embeddings, timeline engine, semantic search.
+5. **Experience Layer** — React desktop UI, dashboards, replay, knowledge graph, analytics.
+6. **Production Hardening** — Security, testing, installers, updates, documentation, observability.
+
+---
+
+## Deliverables for Phase 1
+
+* ✅ Product vision
+* ✅ Core philosophy
+* ✅ System boundaries
+* ✅ Major modules
+* ✅ Event-driven architecture
+* ✅ Memory model
+* ✅ AI pipeline
+* ✅ Search pipeline
+* ✅ Timeline philosophy
+* ✅ Knowledge graph concept
+* ✅ Privacy model
+* ✅ Performance targets
+* ✅ Development roadmap
+
+---
+
+**Phase 1 is complete.**

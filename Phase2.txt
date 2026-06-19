@@ -1,0 +1,883 @@
+# RecallOS
+
+# Phase 2 — System Architecture
+
+**Status:** ✅ Phase 2 only
+
+No implementation yet.
+
+This phase defines a production-grade architecture that can scale from a single-user local application to a future multi-device synchronized platform without requiring major rewrites.
+
+---
+
+# Why this architecture?
+
+RecallOS continuously ingests events from many sources (desktop, browser, IDEs, Git, terminal), performs CPU-intensive work (OCR, embeddings, summarization), and serves a responsive UI.
+
+A layered, event-driven architecture isolates responsibilities:
+
+* Capture never waits for AI.
+* AI never blocks the UI.
+* Storage is replaceable.
+* Every module can evolve independently.
+
+---
+
+# Overall Architecture
+
+```text
+                        ┌──────────────────────────────┐
+                        │        React Frontend        │
+                        │ Dashboard / Search / Graph   │
+                        └──────────────┬───────────────┘
+                                       │
+                          Electron IPC │ REST
+                                       │
+                 ┌─────────────────────▼──────────────────────┐
+                 │            Electron Main Process           │
+                 │ Window Management • Tray • Auto Update     │
+                 └──────────────┬──────────────────────────────┘
+                                │
+                 IPC            │
+                                ▼
+               ┌────────────────────────────────────┐
+               │          Backend API               │
+               │ Express + TypeScript               │
+               └──────────────┬─────────────────────┘
+                              │
+                    Internal Event Bus
+                              │
+      ┌──────────────┬────────┼────────┬──────────────┐
+      ▼              ▼        ▼        ▼              ▼
+ Capture       Timeline   Search   Analytics     AI Engine
+ Service        Engine     Engine    Engine
+      │
+      ▼
+ Event Queue
+      │
+      ▼
+ Workers
+      │
+ ┌────┴───────────────┐
+ ▼                    ▼
+SQLite            ChromaDB
+```
+
+---
+
+# Layered Architecture
+
+```text
+Presentation Layer
+        │
+Application Layer
+        │
+Domain Layer
+        │
+Infrastructure Layer
+```
+
+---
+
+## 1. Presentation Layer
+
+Contains only UI.
+
+Responsibilities:
+
+* Rendering
+* Keyboard shortcuts
+* State management
+* Search interface
+* Timeline visualization
+* Graph visualization
+* Analytics dashboard
+
+Never contains business logic.
+
+---
+
+## 2. Application Layer
+
+Coordinates workflows.
+
+Example:
+
+```text
+User searches
+
+↓
+
+SearchController
+
+↓
+
+SearchService
+
+↓
+
+TimelineService
+
+↓
+
+EmbeddingService
+
+↓
+
+Result
+```
+
+Application services orchestrate work.
+
+---
+
+## 3. Domain Layer
+
+Pure business logic.
+
+Contains:
+
+* Event
+* Timeline
+* Project
+* Repository
+* Session
+* Knowledge Graph
+* Search Ranking
+* Journal
+* Replay
+
+No database code.
+
+No HTTP code.
+
+No Electron code.
+
+---
+
+## 4. Infrastructure Layer
+
+Responsible for:
+
+* SQLite
+* ChromaDB
+* OCR
+* AI providers
+* File system
+* Electron IPC
+* Browser extension communication
+* Git commands
+* Terminal monitoring
+
+---
+
+# Electron Architecture
+
+Electron should be thin.
+
+```text
+Electron
+
+Main Process
+
+Renderer
+
+Preload
+
+Backend
+```
+
+---
+
+## Main Process
+
+Responsibilities
+
+* Window lifecycle
+* System tray
+* Auto launch
+* Native notifications
+* Power events
+* File dialogs
+* IPC bridge
+
+Nothing AI-related.
+
+---
+
+## Renderer
+
+Runs React.
+
+Only renders UI.
+
+---
+
+## Preload
+
+Exposes a secure API.
+
+Example
+
+```typescript
+window.recall.search()
+
+window.recall.settings()
+
+window.recall.timeline()
+```
+
+No Node.js access from React.
+
+---
+
+# IPC Design
+
+Renderer never accesses filesystem.
+
+```text
+React
+
+↓
+
+IPC
+
+↓
+
+Electron
+
+↓
+
+Backend
+```
+
+Every IPC call has:
+
+* validation
+* timeout
+* logging
+* error mapping
+
+---
+
+# Desktop Agent Architecture
+
+The desktop agent is composed of independent collectors.
+
+```text
+Desktop Agent
+
+├── Window Monitor
+├── Clipboard Monitor
+├── File Watcher
+├── Git Watcher
+├── Idle Detector
+├── Screenshot Scheduler
+├── Terminal Monitor
+├── Browser Sync
+├── OCR Scheduler
+└── Event Publisher
+```
+
+Each collector emits events only.
+
+---
+
+# Browser Extension Architecture
+
+```text
+Content Script
+
+↓
+
+Background Worker
+
+↓
+
+Summary Generator
+
+↓
+
+Native Messaging
+
+↓
+
+Desktop Agent
+```
+
+The extension never writes directly to SQLite.
+
+---
+
+# IDE Connector Architecture
+
+Each IDE has an adapter.
+
+```text
+VS Code Adapter
+
+Cursor Adapter
+
+Windsurf Adapter
+
+IntelliJ Adapter
+
+↓
+
+Shared IDE API
+
+↓
+
+Event Bus
+```
+
+This avoids duplicated logic.
+
+---
+
+# Backend Services
+
+```text
+API
+
+↓
+
+Controllers
+
+↓
+
+Application Services
+
+↓
+
+Repositories
+
+↓
+
+Database
+```
+
+Controllers remain extremely thin.
+
+---
+
+# Service Breakdown
+
+```text
+EventService
+
+TimelineService
+
+ReplayService
+
+SearchService
+
+AnalyticsService
+
+JournalService
+
+EmbeddingService
+
+GraphService
+
+OCRService
+
+GitService
+
+TerminalService
+
+SettingsService
+
+AIService
+```
+
+Each service has a single responsibility.
+
+---
+
+# Event Bus
+
+Everything communicates through events.
+
+```text
+Clipboard Updated
+
+↓
+
+Event Bus
+
+↓
+
+Search
+
+↓
+
+Analytics
+
+↓
+
+Timeline
+
+↓
+
+Journal
+
+↓
+
+Graph
+```
+
+No direct dependencies.
+
+---
+
+# Queue Architecture
+
+Heavy work is asynchronous.
+
+```text
+Incoming Event
+
+↓
+
+Queue
+
+↓
+
+Summarization Worker
+
+↓
+
+Embedding Worker
+
+↓
+
+OCR Worker
+
+↓
+
+Timeline Worker
+
+↓
+
+Analytics Worker
+```
+
+The UI never waits.
+
+---
+
+# Worker Model
+
+Dedicated workers:
+
+```text
+OCR Worker
+
+Embedding Worker
+
+Journal Worker
+
+Analytics Worker
+
+Cleanup Worker
+
+Sync Worker
+```
+
+Each worker has retry logic.
+
+---
+
+# Storage Architecture
+
+SQLite stores structured data.
+
+```text
+Projects
+
+Repositories
+
+Files
+
+Events
+
+Reports
+
+Settings
+```
+
+ChromaDB stores vectors.
+
+```text
+Embeddings
+
+Similarity Index
+
+Semantic Cache
+```
+
+Large screenshots remain on disk.
+
+Only metadata is stored in SQLite.
+
+---
+
+# Screenshot Strategy
+
+```text
+Screenshot
+
+↓
+
+Compress
+
+↓
+
+SHA256
+
+↓
+
+Duplicate Check
+
+↓
+
+OCR
+
+↓
+
+Summary
+
+↓
+
+Embedding
+
+↓
+
+Store
+```
+
+Duplicates are discarded.
+
+---
+
+# Search Architecture
+
+Hybrid search:
+
+```text
+User Query
+
+↓
+
+Intent Parser
+
+↓
+
+SQLite Search
+
++
+
+Vector Search
+
+↓
+
+Merge
+
+↓
+
+Ranking
+
+↓
+
+LLM Answer
+```
+
+This balances speed and semantic relevance.
+
+---
+
+# Timeline Builder
+
+Timeline generation runs in stages:
+
+```text
+Events
+
+↓
+
+Group by Time
+
+↓
+
+Group by Project
+
+↓
+
+Merge Related Events
+
+↓
+
+AI Summary
+
+↓
+
+Timeline Block
+```
+
+Example:
+
+```text
+20 Chrome Events
+
+↓
+
+Read Spring Security Documentation
+
+instead of
+
+20 individual events
+```
+
+---
+
+# Knowledge Graph Engine
+
+Entities:
+
+```text
+Projects
+
+Repositories
+
+Files
+
+Technologies
+
+Commands
+
+Errors
+
+Solutions
+
+People
+
+Meetings
+
+Articles
+```
+
+Relationships:
+
+```text
+USES
+
+CREATED
+
+FIXED
+
+READ
+
+COMMITTED
+
+REFERENCED
+
+DEPENDS_ON
+
+OPENED
+```
+
+This enables graph expansion during search.
+
+---
+
+# AI Provider Layer
+
+Every provider implements a common interface:
+
+```text
+LLMProvider
+
+generate()
+
+stream()
+
+embed()
+
+healthCheck()
+```
+
+Supported providers:
+
+* Ollama
+* OpenAI
+* Claude
+* Gemini
+* OpenRouter
+
+Providers are loaded dynamically based on user settings.
+
+---
+
+# Configuration System
+
+Configuration precedence:
+
+```text
+Defaults
+
+↓
+
+Environment
+
+↓
+
+User Settings
+
+↓
+
+Workspace Overrides
+```
+
+No hardcoded values.
+
+---
+
+# Logging Architecture
+
+Structured logging only.
+
+Log levels:
+
+```text
+TRACE
+
+DEBUG
+
+INFO
+
+WARN
+
+ERROR
+
+FATAL
+```
+
+Logs are JSON to simplify debugging and future telemetry (if users opt in).
+
+---
+
+# Error Handling
+
+Every error follows a standard shape:
+
+```text
+ApplicationError
+
+↓
+
+ValidationError
+
+↓
+
+InfrastructureError
+
+↓
+
+AIError
+
+↓
+
+DatabaseError
+
+↓
+
+IPCError
+```
+
+Errors include correlation IDs for tracing.
+
+---
+
+# Security Architecture
+
+Key decisions:
+
+* Context isolation enabled in Electron.
+* Node integration disabled in renderer.
+* Strict Content Security Policy.
+* AES-256 encryption for secrets.
+* API keys stored using the operating system's secure credential store where available.
+* Parameterized SQL queries only.
+* Prompt injection filtering before sending retrieved context to LLMs.
+* Per-source permission controls.
+
+---
+
+# Scalability Strategy
+
+Although RecallOS is local-first, internal interfaces allow future expansion:
+
+```text
+Today
+
+Desktop
+
+↓
+
+Tomorrow
+
+Desktop
+
++
+
+Phone
+
++
+
+Cloud Sync
+
++
+
+Team Workspace
+```
+
+The core event model remains unchanged.
+
+---
+
+# Architectural Decisions Summary
+
+| Decision                   | Reason                                           |
+| -------------------------- | ------------------------------------------------ |
+| Event-driven design        | Loose coupling and extensibility                 |
+| Electron + React           | Mature desktop stack with rich ecosystem         |
+| Thin Electron main process | Easier maintenance and security                  |
+| Express backend            | Clear separation of UI and services              |
+| SQLite + ChromaDB          | Fast structured queries plus semantic search     |
+| Worker-based processing    | Keeps UI responsive during AI tasks              |
+| Common provider interfaces | Easy switching between AI backends               |
+| Hybrid search              | Combines keyword precision with vector relevance |
+| Local-first storage        | Privacy, offline support, and user trust         |
+| Layered architecture       | Testability and long-term maintainability        |
+
+---
+
+## Phase 2 Deliverables
+
+* ✅ Complete system architecture
+* ✅ Layered design
+* ✅ Electron architecture
+* ✅ IPC strategy
+* ✅ Service boundaries
+* ✅ Event bus design
+* ✅ Worker model
+* ✅ Storage architecture
+* ✅ Search architecture
+* ✅ Knowledge graph architecture
+* ✅ AI provider abstraction
+* ✅ Security model
+* ✅ Logging and error strategy
+* ✅ Scalability roadmap
+
+**Phase 2 is complete.**
